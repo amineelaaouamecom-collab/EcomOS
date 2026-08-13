@@ -49,7 +49,7 @@ export function useOrders(filters: UseOrdersFilters = {}) {
         const statuses = filters.status.map((s) => normalizeStatus(String(s)));
         return base.filter((o) => statuses.includes(normalizeStatus(o.status)));
       }
-      return base.filter((o) => normalizeStatus(o.status) === normalizeStatus(filters.status));
+      return base.filter((o) => normalizeStatus(o.status) === normalizeStatus(String(filters.status)));
     }
 
     return base;

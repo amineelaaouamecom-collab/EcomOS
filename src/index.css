@@ -187,3 +187,11 @@ body {
     display: none;
   }
 }
+
+/* PWA Safe Areas */
+.pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+.pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px); }
+.pl-safe { padding-left: env(safe-area-inset-left, 0px); }
+.pr-safe { padding-right: env(safe-area-inset-right, 0px); }
+.min-h-safe-screen { min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+

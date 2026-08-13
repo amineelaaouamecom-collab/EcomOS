@@ -1,4 +1,4 @@
-import { FormEvent, useState, useEffect } from "react";
+import { FormEvent, useState, useEffect, ChangeEvent } from "react";
 import { Modal } from "../Modal";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../hooks/useAuth";
@@ -31,8 +31,9 @@ export function ProductModal({ product, onClose, onSaved }: { product: any | nul
         }
     }, [product]);
 
-    const handleChange = (field: string, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+    const handleChange = (field: string, value: string | ChangeEvent<HTMLInputElement>) => {
+        const stringValue = typeof value === 'string' ? value : (value.target as HTMLInputElement).value;
+        setFormData(prev => ({ ...prev, [field]: stringValue }));
     };
 
     const onSubmit = async (e: FormEvent) => {

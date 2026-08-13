@@ -44,7 +44,7 @@ export default function ExportImport() {
       const { error } = await supabase
         .from('workspace_exports')
         .insert({
-          workspace_id,
+          workspace_id: workspaceId,
           export_type: type,
           format,
           status: 'pending',

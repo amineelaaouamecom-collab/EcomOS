@@ -495,9 +495,7 @@ export default function Delivering() {
 
   const [visibleCount, setVisibleCount] = useState(50);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const autoRefreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isShippingRefreshRunningRef = useRef(false);
-  const autoRefreshCallbackRef = useRef<() => void>(() => undefined);
 
   const handleScroll = () => {
     const el = scrollContainerRef.current;
@@ -539,7 +537,7 @@ export default function Delivering() {
       setLoadingShippingPrice(true);
       try {
         const status = panelOrder.shipping_status || panelOrder.delivery_status || panelOrder.status;
-        
+
         // If status is refused, use refused price
         if (isRefusedStatus(status)) {
           const refusedPrice = await getRefusedPrice(panelOrder.city);
@@ -570,7 +568,7 @@ export default function Delivering() {
   };
 
   // ── Auto Refresh System ───────────────────────────────────────────────────
-  
+
   // Filter orders eligible for auto-refresh
   const getEligibleOrdersForAutoRefresh = useCallback((): Order[] => {
     return orders.filter(order => {
@@ -580,15 +578,15 @@ export default function Delivering() {
       if (!orderCarrier) return false;
       const trackingField = orderCarrier === "coliaty" ? "coliaty_parcel_code" : "tracking_number";
       const trackingNumber = (order as any)[trackingField];
-      
+
       if (!trackingNumber) return false;
-      
+
       // Must not be in final status
       if (isFinalShippingStatus(order.shipping_status)) return false;
-      
+
       // Must be confirmed or have shipping status
       if (!isConfirmedOrderStatus(order.status) && !order.shipping_status) return false;
-      
+
       return true;
     });
   }, [orders]);
@@ -596,8 +594,8 @@ export default function Delivering() {
   // ── Unified Shipping Status Refresh Function ─────────────────────────────────
   const refreshShippingStatuses = useCallback(async (ordersToRefresh: Order[] = []) => {
     // Determine which orders to refresh
-    const orders = ordersToRefresh.length > 0 
-      ? ordersToRefresh 
+    const orders = ordersToRefresh.length > 0
+      ? ordersToRefresh
       : getEligibleOrdersForAutoRefresh();
 
     if (orders.length === 0) {
@@ -758,40 +756,6 @@ export default function Delivering() {
       setIsAutoRefreshing(false);
     }
   }, [runShippingRefresh]);
-
-  // Keep a stable timer while always invoking the most recent callback. This
-  // avoids stale dependency closures and cleans up correctly under StrictMode.
-  useEffect(() => {
-    autoRefreshCallbackRef.current = () => { void performAutoRefresh(); };
-  }, [performAutoRefresh]);
-
-  const startAutoRefreshTimer = useCallback(() => {
-    if (autoRefreshTimerRef.current) clearInterval(autoRefreshTimerRef.current);
-    const timer = setInterval(() => autoRefreshCallbackRef.current(), 20_000);
-    autoRefreshTimerRef.current = timer;
-    return timer;
-  }, []);
-
-  useEffect(() => {
-    if (!workspace?.id) return;
-    if (activeAutoRefreshWorkspaces.has(workspace.id)) return;
-    activeAutoRefreshWorkspaces.add(workspace.id);
-    console.log('[AutoRefresh] Starting one 20-second auto-refresh timer');
-    const timer = startAutoRefreshTimer();
-    return () => {
-      if (autoRefreshTimerRef.current === timer) {
-        clearInterval(timer);
-        autoRefreshTimerRef.current = null;
-      }
-      activeAutoRefreshWorkspaces.delete(workspace.id);
-    };
-  }, [workspace?.id, startAutoRefreshTimer]);
-
-  const resetAutoRefreshTimer = useCallback(() => {
-    if (!workspace?.id) return;
-    startAutoRefreshTimer();
-    console.log('[AutoRefresh] Timer reset after manual refresh');
-  }, [workspace?.id, startAutoRefreshTimer]);
 
   // ── Derived order lists ──────────────────────────────────────────────────
   const filteredOrders = useMemo(() => {
@@ -1778,7 +1742,7 @@ export default function Delivering() {
     if (isRefreshingAll || visibleSelectedCount === 0) return;
 
     // Reset auto-refresh timer when manual refresh is triggered
-    resetAutoRefreshTimer();
+    
 
     const selectedOrders = orders.filter((o) => {
       const uniqueId = o.id || o.order_number;
@@ -2273,7 +2237,7 @@ export default function Delivering() {
             </div>
           ) : (
             <>
-              <div className="flex-1 overflow-auto" ref={scrollContainerRef} onScroll={handleScroll}>
+              <div className="flex-1 overflow-auto hidden md:block" ref={scrollContainerRef} onScroll={handleScroll}>
                 <table className="w-full text-left text-[13px] whitespace-nowrap">
                   <thead className="sticky top-0 z-10 font-semibold text-gray-500 uppercase text-[11px] tracking-wider border-b border-gray-200 bg-white">
                     <tr>
@@ -2348,6 +2312,72 @@ export default function Delivering() {
                     })}
                   </tbody>
                 </table>
+              </div>
+
+              {/* ── Mobile Layout (Cards) ── */}
+              <div className="flex-1 overflow-auto md:hidden p-3" onScroll={handleScroll}>
+                <div className="flex flex-col gap-3 pb-8">
+                  {displayOrders.map((order, idx) => {
+                    const uniqueId = order.id || order.order_number || `temp-${idx}`;
+                    const isSelected = selectedOrderIds.includes(uniqueId);
+                    const currentStatus = order.shipping_status;
+                    const trk = order.tracking_number || order.coliaty_parcel_code || "";
+
+                    return (
+                      <div
+                        key={uniqueId}
+                        onClick={() => setPanelOrder(order)}
+                        className={`rounded-xl border p-4 shadow-sm relative overflow-hidden transition-all ${isSelected ? "bg-indigo-50/50 border-indigo-200" : "bg-white border-gray-200 active:bg-gray-50"
+                          }`}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1 pr-4 whitespace-nowrap overflow-hidden">
+                            <div className="text-[15px] font-bold text-gray-900 truncate">
+                              {order.customer?.name ?? (order as any).customer_name ?? "Unknown"}
+                            </div>
+                            <div className="text-[13px] text-gray-500 mt-0.5 truncate">
+                              {order.city || "No City"} • <span className="font-mono">{order.phone ?? order.customer?.phone ?? "No phone"}</span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="font-mono text-[15px] font-bold text-gray-900 tracking-tight">{mad(order.total)}</div>
+                            <div className="font-mono text-[11px] text-gray-500 mt-0.5">#{order.order_number}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 items-center mb-1">
+                          <div className="scale-90 origin-left"><ShippingStatusBadge status={currentStatus} /></div>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                          <div className="flex items-center gap-1.5" onClick={(e) => {
+                            e.stopPropagation();
+                            if (trk) { navigator.clipboard.writeText(trk); toast.success("Copied!"); }
+                          }}>
+                            {trk ? (
+                              <div className="flex items-center text-gray-600 font-mono text-[12px] bg-gray-50 px-2 py-1 rounded">
+                                {trk}
+                              </div>
+                            ) : <span className="text-gray-400 text-[12px]">No tracking</span>}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              disabled={Boolean(getDeliveryNoteRef(order))}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                setSelectedOrderIds(prev => prev.includes(uniqueId) ? prev.filter(id => id !== uniqueId) : [...prev, uniqueId]);
+                              }}
+                              className="rounded border-gray-300 text-gray-900 focus:ring-gray-900 cursor-pointer disabled:opacity-50 w-4 h-4 ml-2"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* ── Progress Footer ── */}
@@ -2546,8 +2576,8 @@ export default function Delivering() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[12px] text-gray-500">
-                    {isRefusedStatus(panelOrder.shipping_status || panelOrder.delivery_status || panelOrder.status) 
-                      ? 'Refused Price' 
+                    {isRefusedStatus(panelOrder.shipping_status || panelOrder.delivery_status || panelOrder.status)
+                      ? 'Refused Price'
                       : 'Shipping Price'}
                   </span>
                   <span className="text-[13px] font-medium text-gray-900">

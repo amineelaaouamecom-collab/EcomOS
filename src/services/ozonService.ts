@@ -16,6 +16,10 @@ const OZON_BASE_URL = "https://api.ozonexpress.ma";
 const OZON_CITIES_URL = "https://api.ozonexpress.ma/cities";
 const PROVIDER_KEY = "ozon";
 
+// In production, use direct API calls. In development, use Vite proxy if available.
+const USE_DEV_PROXY = import.meta.env.DEV && import.meta.env.VITE_USE_OZON_PROXY === 'true';
+const OZON_API_BASE = USE_DEV_PROXY ? '/api-ozon' : OZON_BASE_URL;
+
 // ─── City Types & Cache ───────────────────────────────────────────────────────
 
 export interface OzonCity {
@@ -47,7 +51,7 @@ export async function initializeOzonCities(): Promise<void> {
 
   isFetchingCities = true;
   try {
-    const response = await fetch('https://api.ozonexpress.ma/cities');
+    const response = await fetch(`${OZON_API_BASE}/cities`);
     if (!response.ok) throw new Error('Could not fetch Ozon cities');
 
     const json = await response.json();
@@ -227,7 +231,7 @@ export async function createOzonParcel(
     const formData = buildFormData(parcelData);
     const clientId = config.clientId?.trim() || "";
     const apiKey = config.apiKey?.trim() || "";
-    const localUrl = `/api-ozon/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/add-parcel`;
+    const localUrl = `${OZON_API_BASE}/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/add-parcel`;
     const redactedUrl = localUrl.replace(encodeURIComponent(apiKey), "HIDDEN_KEY");
     console.log("[Ozon Dispatching via Local Proxy]:", redactedUrl);
 
@@ -323,7 +327,7 @@ export async function trackOzonParcel(
   try {
     const clientId = config.clientId?.trim() || "";
     const apiKey = config.apiKey?.trim() || "";
-    const localUrl = `/api-ozon/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/tracking`;
+    const localUrl = `${OZON_API_BASE}/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/tracking`;
     const redactedUrl = localUrl.replace(encodeURIComponent(apiKey), "HIDDEN_KEY");
     console.log("[Ozon Tracking via Local Proxy]:", redactedUrl);
 
@@ -389,7 +393,7 @@ export async function getOzonParcelInfo(
   try {
     const clientId = config.clientId?.trim() || "";
     const apiKey = config.apiKey?.trim() || "";
-    const localUrl = `/api-ozon/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/parcel-info`;
+    const localUrl = `${OZON_API_BASE}/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/parcel-info`;
     const redactedUrl = localUrl.replace(encodeURIComponent(apiKey), "HIDDEN_KEY");
     console.log("[Ozon Parcel Info via Local Proxy]:", redactedUrl);
 
@@ -430,9 +434,9 @@ export async function getOzonParcelInfo(
 /**
  * Creates a delivery note for one or more tracking numbers in Ozon Express.
  * This orchestrates a 4-step flow:
- * a) POST /api-ozon/customers/{clientId}/{apiKey}/add-delivery-note (no body) -> returns a ref
- * b) POST /api-ozon/customers/{clientId}/{apiKey}/add-parcel-to-delivery-note (Ref, Codes[0]...)
- * c) POST /api-ozon/customers/{clientId}/{apiKey}/save-delivery-note (Ref)
+ * a) POST ${OZON_API_BASE}/customers/{clientId}/{apiKey}/add-delivery-note (no body) -> returns a ref
+ * b) POST ${OZON_API_BASE}/customers/{clientId}/{apiKey}/add-parcel-to-delivery-note (Ref, Codes[0]...)
+ * c) POST ${OZON_API_BASE}/customers/{clientId}/{apiKey}/save-delivery-note (Ref)
  * d) Build PDF download URL
  *
  * @param config           Ozon API credentials (clientId + apiKey)
@@ -454,7 +458,7 @@ export async function createOzonDeliveryNote(
   // Step a: Add Delivery Note
   let ref = "";
   try {
-    const localUrl = `/api-ozon/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/add-delivery-note`;
+    const localUrl = `${OZON_API_BASE}/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/add-delivery-note`;
     const redactedUrl = localUrl.replace(encodeURIComponent(apiKey), redactedKey);
     console.log("[Ozon Delivery Note Step 1/4 - Add Delivery Note]:", redactedUrl);
 
@@ -497,7 +501,7 @@ export async function createOzonDeliveryNote(
 
   // Step b: Add Parcels to Delivery Note
   try {
-    const localUrl = `/api-ozon/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/add-parcel-to-delivery-note`;
+    const localUrl = `${OZON_API_BASE}/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/add-parcel-to-delivery-note`;
     const redactedUrl = localUrl.replace(encodeURIComponent(apiKey), redactedKey);
     console.log("[Ozon Delivery Note Step 2/4 - Add Parcels to Delivery Note]:", redactedUrl);
 
@@ -572,7 +576,7 @@ export async function createOzonDeliveryNote(
 
   // Step c: Save Delivery Note
   try {
-    const localUrl = `/api-ozon/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/save-delivery-note`;
+    const localUrl = `${OZON_API_BASE}/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/save-delivery-note`;
     const redactedUrl = localUrl.replace(encodeURIComponent(apiKey), redactedKey);
     console.log("[Ozon Delivery Note Step 3/4 - Save Delivery Note]:", redactedUrl);
 
@@ -644,7 +648,7 @@ export async function createOzonDeliveryNoteOnly(
   // Step 1: Create BL header
   let ref = "";
   try {
-    const url = `/api-ozon/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/add-delivery-note`;
+    const url = `${OZON_API_BASE}/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/add-delivery-note`;
     const response = await fetch(url, { method: "POST" });
     const rawText = await response.text();
     if (!response.ok) return { success: false, error: `add-delivery-note HTTP ${response.status}: ${rawText}` };
@@ -661,7 +665,7 @@ export async function createOzonDeliveryNoteOnly(
 
   // Step 2: Save BL (no parcels added)
   try {
-    const url = `/api-ozon/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/save-delivery-note`;
+    const url = `${OZON_API_BASE}/customers/${encodeURIComponent(clientId)}/${encodeURIComponent(apiKey)}/save-delivery-note`;
     const fd = new FormData();
     fd.append("Ref", ref);
     const response = await fetch(url, { method: "POST", body: fd });

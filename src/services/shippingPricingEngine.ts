@@ -152,7 +152,7 @@ export async function getRefusedPrice(city: string): Promise<number | null> {
       .ilike('name', city.trim().toLowerCase())
       .single();
 
-    return data?.refused_price !== null ? Number(data.refused_price) : null;
+    return data?.refused_price !== null && data !== null ? Number(data.refused_price) : null;
   } catch (error) {
     console.error('[ShippingPricingEngine] Error fetching refused price:', error);
     return null;
@@ -170,7 +170,7 @@ export async function getDeliveredPrice(city: string): Promise<number | null> {
       .ilike('name', city.trim().toLowerCase())
       .single();
 
-    return data?.delivered_price !== null ? Number(data.delivered_price) : null;
+    return data?.delivered_price !== null && data !== null ? Number(data.delivered_price) : null;
   } catch (error) {
     console.error('[ShippingPricingEngine] Error fetching delivered price:', error);
     return null;
@@ -192,8 +192,8 @@ export async function getCityPricing(city: string): Promise<{
       .single();
 
     return {
-      deliveredPrice: data?.delivered_price !== null ? Number(data.delivered_price) : null,
-      refusedPrice: data?.refused_price !== null ? Number(data.refused_price) : null,
+      deliveredPrice: data?.delivered_price !== null && data !== null ? Number(data.delivered_price) : null,
+      refusedPrice: data?.refused_price !== null && data !== null ? Number(data.refused_price) : null,
     };
   } catch (error) {
     console.error('[ShippingPricingEngine] Error fetching city pricing:', error);

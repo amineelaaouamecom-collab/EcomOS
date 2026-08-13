@@ -38,6 +38,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
     const loadRef = useRef<((forceReload?: boolean) => Promise<void>) | null>(null);
     const hasLoadedRef = useRef(false);
     const activeWorkspaceRef = useRef<string | null>(null);
+    const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
     const load = useCallback(async (forceReload = false) => {
         if (isLoadingRef.current) return;
@@ -325,9 +326,9 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         // Debounced RT reload — batch rapid events
         const debouncedReload = createDebounce(500);
 
-        // Supabase RT Subscription for Orders — stable channel name
-        const uniq = Math.random().toString(36).substring(2, 10);
-        const channel = supabase.channel(`orders-ctx-${workspace.id}-${uniq}`);
+        // Supabase RT Subscription for Orders — stable channel name (reused across remounts)
+        const channel = supabase.channel(`orders-ctx-${workspace.id}`);
+        channelRef.current = channel;
         channel.on(
             "postgres_changes",
             {

@@ -108,7 +108,7 @@ function NavLinkItem({
   return (
     <NavLink
       to={link.to}
-      end={link.to === "/dashboard" || link.to === "/admin"}
+      end={link.to === "/dashboard" || link.to === "/admin" || link.to === "/settings"}
       title={collapsed ? link.label : undefined}
       aria-label={link.label}
       onMouseEnter={getPrefetchHandler(link.to)}

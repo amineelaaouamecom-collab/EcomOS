@@ -1,4 +1,6 @@
 // Script to import Ozon cities from Excel to Supabase
+// NOTE: This is a development utility script. It should NOT be deployed to production.
+// Update the Excel file path below before running this script.
 import XLSX from 'xlsx';
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
@@ -22,7 +24,9 @@ const supabase = createClient(
 async function importOzonCities() {
   try {
     console.log('Reading Excel file...');
-    const workbook = XLSX.readFile('c:\\Users\\Mac\\Downloads\\cities_pricing7.xlsx');
+    // UPDATE THIS PATH to your Excel file location
+    const excelFilePath = process.env.OZON_CITIES_FILE || './cities_pricing7.xlsx';
+    const workbook = XLSX.readFile(excelFilePath);
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(sheet);

@@ -105,7 +105,7 @@ export async function syncOrderTracking(order: Order, workspaceId: string, carri
     console.warn("[OzonTrackingSync] Invalid Ozon config:", validation.error);
     result.previousStatus = order.shipping_status ?? undefined;
     // Do not fabricate a default when shipping_status is missing — preserve the DB value (may be null)
-    result.newStatus = order.shipping_status ?? null;
+    result.newStatus = order.shipping_status ?? undefined;
     result.success = true;
     return result;
   }
@@ -114,7 +114,7 @@ export async function syncOrderTracking(order: Order, workspaceId: string, carri
   if (!ozonResponse) {
     console.warn("[OzonTrackingSync] Failed to fetch from Ozon API, but will show current Supabase status");
     result.previousStatus = order.shipping_status ?? undefined;
-    result.newStatus = order.shipping_status ?? null;
+    result.newStatus = order.shipping_status ?? undefined;
     result.success = true;
     return result;
   }
@@ -139,7 +139,7 @@ export async function syncOrderTracking(order: Order, workspaceId: string, carri
   if (ozonStatus === "Unknown" || !ozonStatus) {
     console.warn("[OzonTrackingSync] Ozon API returned no valid status, keeping current database status");
     result.previousStatus = order.shipping_status ?? undefined;
-    result.newStatus = order.shipping_status ?? null;
+    result.newStatus = order.shipping_status ?? undefined;
     result.success = true;
     return result;
   }

@@ -19,6 +19,8 @@ export type CanonicalStatus =
   | 'out_of_stock'
   | 'refused'
   | 'new'
+  | 'busy'
+  | 'new'
   | 'busy';
 
 export type StatusLanguage = 'en' | 'fr';
@@ -130,6 +132,7 @@ export const STATUS_SORT_ORDER: Record<CanonicalStatus, number> = {
   blacklisted: 13,
   duplicate: 14,
   busy: 15,
+  new: 0,
 };
 
 // ============================================================
@@ -283,7 +286,7 @@ const NORMALIZATION_MAP: Record<string, CanonicalStatus> = {
   
   'expédié': 'shipped',
   'Expédié': 'shipped',
-  'EXPÉDIÉ': 'shipping',
+  'EXPÉDIÉ': 'shipped',
   'expedie': 'shipped',
   'Expedie': 'shipped',
   'EXPEDIE': 'shipped',
@@ -351,13 +354,11 @@ const NORMALIZATION_MAP: Record<string, CanonicalStatus> = {
   'REPORTE': 'scheduled',
   'reporte': 'scheduled',
   'Reporte': 'scheduled',
-  'REPORTE': 'scheduled',
   'reporté ': 'scheduled',
   'Reporté ': 'scheduled',
   'REPORTE ': 'scheduled',
   'reporte ': 'scheduled',
   'Reporte ': 'scheduled',
-  'REPORTE ': 'scheduled',
   
   'blacklisté': 'blacklisted',
   'Blacklisté': 'blacklisted',
@@ -471,7 +472,7 @@ const NORMALIZATION_MAP: Record<string, CanonicalStatus> = {
   
   'unavailable': 'unreachable',
   'Unavailable': 'unreachable',
-  'UNAVAILABLE': 'unavailable',
+  'UNAVAILABLE': 'unreachable',
   'indisponible': 'unreachable',
   'Indisponible': 'unreachable',
   'INDISPONIBLE': 'unreachable',

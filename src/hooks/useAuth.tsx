@@ -205,7 +205,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (invitationErr) {
           const errDetail = invitationErr?.message ?? invitationErr?.details ?? JSON.stringify(invitationErr);
-          if (isSupabaseTableError(invitationErr)) {
+          if (invitationErr.code === "PGRST202") {
+            // Silently ignore if the RPC does not exist yet (404)
+          } else if (isSupabaseTableError(invitationErr)) {
             console.warn("[useAuth] Invitation lookup skipped due to Supabase access issue:", errDetail);
           } else {
             console.warn("[useAuth] Invitation lookup failed:", errDetail);

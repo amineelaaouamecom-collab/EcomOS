@@ -463,7 +463,7 @@ export function useDashboardData(startDate?: Date, endDate?: Date): DashboardDat
       }, 1000);
     };
 
-    // ── Single RT channel for all dashboard tables ──
+    // ── Single RT channel for all dashboard tables (stable channel name) ──
     const channel = supabase.channel(`dashboard-rt-${wid}`);
     try {
       channel.on(

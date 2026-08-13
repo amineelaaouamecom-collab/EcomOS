@@ -200,7 +200,10 @@ export async function getCachedOrFetch<T>(
 }
 
 export {
-  aiCache,
+  aiCache
+};
+
+export type {
   AICache,
   CacheConfig,
   DEFAULT_CACHE_CONFIG

@@ -231,7 +231,8 @@ export function ReturnToStockModal({ isOpen, onClose }: ReturnToStockModalProps)
         // Load product/stock details
         setIsProcessing(true);
         try {
-            const items = await loadOrderItems(order.id || order["Order ID"], order.sku, order.quantity, order.product_variant, workspace.id);
+            const orderId = (order as any).id || (order as any)["Order ID"];
+            const items = await loadOrderItems(orderId, order.sku, order.quantity, order.product_variant, workspace?.id);
 
             setSelectedOrder({ ...order, items });
 
@@ -254,8 +255,9 @@ export function ReturnToStockModal({ isOpen, onClose }: ReturnToStockModalProps)
         setErrorMsg(null);
 
         try {
+            const orderId = (selectedOrder as any).id || (selectedOrder as any)["Order ID"];
             const result = await executeReturnToStock(
-                selectedOrder.id || selectedOrder["Order ID"],
+                orderId,
                 selectedOrder.items,
                 selectedOrder.displayTracking,
                 workspace.id

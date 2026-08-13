@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Search, ChevronRight } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
@@ -20,78 +20,118 @@ function mad(n: number) {
   return `MAD ${Number(n).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
+// Debounce helper for search
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  
+  return debouncedValue;
+}
+
 export default function Customers() {
   const { workspace } = useAuth();
   const [customers, setCustomers] = useState<CustomerProfile[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const debouncedSearch = useDebounce(search, 300);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!workspace?.id) return;
     const wid = workspace.id;
 
     async function load() {
+      // Cancel previous request if still pending
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      abortControllerRef.current = new AbortController();
       setLoading(true);
-      const [customersRes, ordersRes] = await Promise.all([
-        supabase
+      
+      try {
+        // Optimized: fetch customers and their orders in a single query with join
+        const { data: customersWithOrders } = await supabase
           .from("customers")
-          .select("id, name, phone, city, created_at")
-          .eq("workspace_id", wid),
-        supabase
-          .from("orders")
-          .select('id:"Order ID", customer_id, total, status, created_at, shipping_status')
-          .eq("workspace_id", wid),
-      ]);
+          .select(`
+            id,
+            name,
+            phone,
+            city,
+            created_at,
+            orders!left(id, "Order ID", customer_id, total, status, created_at, shipping_status)
+          `)
+          .eq("workspace_id", wid);
 
-      const customerRows = (customersRes.data ?? []) as Customer[];
-      const orderRows = (ordersRes.data ?? []) as Order[];
+        const customerRows = (customersWithOrders ?? []) as any[];
+        
+        // Process aggregated data client-side (faster than N+1 database queries)
+        const customersWithStats: CustomerProfile[] = customerRows.map((customer) => {
+          const orders = customer.orders || [];
+          const deliveredTotal = orders
+            .filter((order: any) => {
+              if (order.shipping_status) {
+                const normalizedShipping = order.shipping_status.toLowerCase();
+                if (normalizedShipping === "livrÃ©" || normalizedShipping === "delivered") return true;
+              }
+              return order.status === "delivered";
+            })
+            .reduce((sum: number, order: any) => sum + Number(order.total), 0);
 
-      const customersWithStats: CustomerProfile[] = customerRows.map((customer) => {
-        const customerOrders = orderRows.filter((order) => order.customer_id === customer.id);
-        const deliveredTotal = customerOrders
-          .filter((order) => {
-            if (order.shipping_status) {
-              const normalizedShipping = order.shipping_status.toLowerCase();
-              if (normalizedShipping === "livrÃ©" || normalizedShipping === "delivered") return true;
-            }
-            return order.status === "delivered";
-          })
-          .reduce((sum, order) => sum + Number(order.total), 0);
-
-        return {
-          id: customer.id,
-          name: customer.name,
-          phone: customer.phone,
-          city: customer.city,
-          orders: customerOrders.length,
-          totalSpent: deliveredTotal,
-          lastOrderAt: customerOrders.reduce((latest, order) => {
-            const created = new Date(order.created_at).getTime();
-            return latest === null || created > latest ? created : latest;
-          }, null as number | null) ? new Date(
-            customerOrders.reduce((latest, order) => {
+          return {
+            id: customer.id,
+            name: customer.name,
+            phone: customer.phone,
+            city: customer.city,
+            orders: orders.length,
+            totalSpent: deliveredTotal,
+            lastOrderAt: orders.reduce((latest: number | null, order: any) => {
               const created = new Date(order.created_at).getTime();
               return latest === null || created > latest ? created : latest;
-            }, null as number | null) ?? 0
-          ).toISOString() : null,
-        };
-      });
+            }, null) ? new Date(
+              orders.reduce((latest: number | null, order: any) => {
+                const created = new Date(order.created_at).getTime();
+                return latest === null || created > latest ? created : latest;
+              }, null) ?? 0
+            ).toISOString() : null,
+          };
+        });
 
-      setCustomers(customersWithStats.sort((a, b) => b.totalSpent - a.totalSpent));
-      setOrders(orderRows);
-      setLoading(false);
+        setCustomers(customersWithStats.sort((a, b) => b.totalSpent - a.totalSpent));
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Failed to load customers:', error);
+        }
+      } finally {
+        setLoading(false);
+        abortControllerRef.current = null;
+      }
     }
 
     load();
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [workspace?.id]);
 
   const filteredCustomers = useMemo(
     () => customers.filter((customer) =>
-      customer.name.toLowerCase().includes(search.toLowerCase()) ||
-      (customer.phone ?? "").includes(search)
+      customer.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (customer.phone ?? "").includes(debouncedSearch)
     ),
-    [customers, search]
+    [customers, debouncedSearch]
   );
 
   return (

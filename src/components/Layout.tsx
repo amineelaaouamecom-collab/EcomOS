@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Outlet } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
+import { Sidebar, openMobileDrawer } from "./Sidebar";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { EnhancedHeader } from "./EnhancedHeader";
 import { ToastContainer, toast } from "./Toast";
 import { AdminPreviewBanner } from "./AdminPreviewBanner";
@@ -230,7 +231,7 @@ export function Layout() {
             if (!data.success && data.stage) {
               // Structured error response
               let errorMessage = "Meta sync failed";
-              
+
               switch (data.stage) {
                 case "authentication":
                   errorMessage = `Authentication failed: ${data.reason}`;
@@ -371,10 +372,8 @@ export function Layout() {
     // A deliberate, controlled first sync is still allowed for an enabled
     // integration, but it does not use a synthetic fallback URL.
     void performSync(true);
-    const interval = setInterval(() => performSync(), SYNC_POLL_MS);
 
     return () => {
-      clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [workspace?.id, workspace?.google_sheet_url, workspace?.google_sheet_autosync]);
@@ -384,16 +383,17 @@ export function Layout() {
       <Sidebar />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-base-surface">
         <ActivityTracker />
-        <EnhancedHeader />
+        <EnhancedHeader onMenuClick={openMobileDrawer} />
         <AdminPreviewBanner />
         <AnnouncementTray />
         <main className="min-h-0 min-w-0 flex-1 overflow-hidden bg-base-surface">
           <div className="h-full w-full md:hidden">
             <PullToRefresh>
-              <PageContent className="h-full min-h-full">
+              <PageContent className="h-full min-h-full pb-20 md:pb-0">
                 <Outlet />
               </PageContent>
             </PullToRefresh>
+            <MobileBottomNav />
           </div>
           <div className="hidden h-full w-full overflow-y-auto overscroll-contain md:block">
             <PageContent className="h-full min-h-full">

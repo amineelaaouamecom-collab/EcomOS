@@ -113,6 +113,7 @@ export default function App() {
               <Route path="/cod-scenarios" element={<LoadablePage><PermissionGuard permission="codscenarios"><CodScenarios /></PermissionGuard></LoadablePage>} />
               <Route path="/team" element={<LoadablePage><PermissionGuard permission="team"><Team /></PermissionGuard></LoadablePage>} />
               <Route path="/settings" element={<LoadablePage><PermissionGuard permission="settings"><Settings /></PermissionGuard></LoadablePage>} />
+              <Route path="/notifications" element={<Navigate to="/settings?tab=notifications" replace />} />
               <Route path="/tools" element={<LoadablePage><Amine /></LoadablePage>} />
               <Route path="/amine" element={<LoadablePage><Amine /></LoadablePage>} />
               {/* Preserve legacy bookmarks without exposing a monetization screen. */}

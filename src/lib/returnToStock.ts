@@ -65,6 +65,7 @@ export interface ReturnToStockResult {
     qty: number;
     alreadyReturned?: boolean;
     notEligible?: boolean;
+    newStock?: number | null;
 }
 
 // ── Load order items for return ───────────────────────────────────────────────

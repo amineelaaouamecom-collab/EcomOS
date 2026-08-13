@@ -53,7 +53,9 @@ export default function SuperAdminUsers() {
       })
       .subscribe();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      void subscription.unsubscribe();
+    };
   }, []);
 
   async function fetchUsers() {

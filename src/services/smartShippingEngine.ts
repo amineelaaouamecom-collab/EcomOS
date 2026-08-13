@@ -202,7 +202,7 @@ export async function getShippingCost(request: ShippingCostRequest): Promise<Shi
   return {
     cost: businessFee,
     source: 'business_fallback',
-    cityName: city
+    cityName: city || undefined
   };
 }
 
@@ -228,7 +228,7 @@ export function getShippingCostSync(request: ShippingCostRequest): ShippingCostR
         cost: ozonPrice,
         source: 'provider',
         providerName: 'Ozon Express',
-        cityName: city
+        cityName: city || undefined
       };
     }
   }
@@ -238,7 +238,7 @@ export function getShippingCostSync(request: ShippingCostRequest): ShippingCostR
   return {
     cost: 35, // Default fallback
     source: 'business_fallback',
-    cityName: city
+    cityName: city || undefined
   };
 }
 

@@ -83,7 +83,7 @@ export function ConfirmationOrdersTable({
   return (
     <div className="overflow-hidden rounded-2xl border border-base-border bg-base-surface shadow-sm">
       <div className="overflow-x-auto">
-        <table className="min-w-[1030px] w-full border-collapse text-left">
+        <table className="hidden md:table min-w-[1030px] w-full border-collapse text-left">
           <thead className="sticky top-0 z-10 bg-base-raised/90 backdrop-blur">
             <tr className="border-b border-base-border text-[10.5px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
               <th className="px-4 py-3">Order</th>
@@ -140,6 +140,45 @@ export function ConfirmationOrdersTable({
             })}
           </tbody>
         </table>
+
+        {/* Mobile Layout (Cards) */}
+        <div className="flex flex-col md:hidden">
+          {orders.map((order) => {
+            const selected = selectedId === order.id;
+            return (
+              <div
+                key={order.id}
+                onClick={() => onOpen(order)}
+                className={`p-4 border-b border-base-border last:border-b-0 cursor-pointer transition-colors ${selected ? "bg-brand/5" : "bg-base-surface active:bg-base-raised"
+                  }`}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1 pr-3 truncate">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono text-[13px] font-bold text-ink">#{order.orderNumber}</span>
+                      <StatusBadge status={order.status} size="sm" />
+                    </div>
+                    <div className="text-[14px] font-semibold text-ink truncate">{order.customerName}</div>
+                    <div className="text-[12px] text-ink-muted mt-0.5 truncate">{order.phone || "No phone"} • {order.city || "No city"}</div>
+                  </div>
+                  <div className="text-right shrink-0 font-mono text-[14px] font-bold text-ink">
+                    {money(order.total)}
+                  </div>
+                </div>
+
+                <div className="bg-base-raised/50 rounded-lg p-2.5 mb-3">
+                  <ProductPreview order={order} />
+                </div>
+
+                <div className="flex justify-between items-center text-[11px] text-ink-muted">
+                  <AgentAvatar order={order} />
+                  <span>{when(order.createdAt)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
       </div>
     </div>
   );
