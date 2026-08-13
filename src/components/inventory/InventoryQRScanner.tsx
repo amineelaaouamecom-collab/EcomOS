@@ -637,8 +637,8 @@ export function InventoryQRScanner({ isOpen, onClose, onQRDetected, onViewOrder 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-base-border bg-base-surface shadow-card">
+    <div className="fixed inset-0 z-50 flex flex-col items-center bg-black/80 px-4 py-6 pt-safe">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-base-border bg-base-surface shadow-card mt-auto md:mt-0 md:self-center">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
           <div className="flex items-center gap-2">
