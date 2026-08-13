@@ -99,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sessionRef = useRef<typeof session>(null);
   const profileLoadRef = useRef<{ userId: string; promise: Promise<void> } | null>(null);
   const invitationLookupAttemptedRef = useRef(new Set<string>());
+  const navigateRef = useRef<typeof navigate>(navigate);
 
 
   const clearAuthState = useCallback(async () => {
@@ -438,6 +439,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   sessionUserIdRef.current = session?.user?.id;
   previewWorkspaceRef.current = previewWorkspace;
   sessionRef.current = session;
+  navigateRef.current = navigate;
 
 
   // Registered ONCE on mount. Uses refs to always call the latest function.
@@ -466,7 +468,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
 
       if (sess?.user?.id) {
-        if (event === "SIGNED_IN") void supabase.rpc("touch_last_login");
+        if (event === "SIGNED_IN") {
+          void supabase.rpc("touch_last_login");
+          // Redirect to dashboard after successful login from Google OAuth
+          if (window.location.pathname === "/" || window.location.pathname === "/login") {
+            navigateRef.current("/dashboard", { replace: true });
+          }
+        }
         loadProfileRef.current!(sess.user.id);
       } else {
         setProfile(null);

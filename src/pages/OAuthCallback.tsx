@@ -38,7 +38,7 @@ export default function OAuthCallback({ provider }: { provider: "google" | "youc
         } else {
           setStatus("done");
           setMessage(`${provider === "youcan" ? "YouCan" : "Google"} connected.`);
-          setTimeout(() => navigate("/settings"), 1200);
+          setTimeout(() => navigate("/dashboard"), 1200);
         }
       });
   }, [params, provider, navigate]);
@@ -52,10 +52,10 @@ export default function OAuthCallback({ provider }: { provider: "google" | "youc
         <div className="text-[13.5px] text-ink">{message}</div>
         {status === "error" && (
           <button
-            onClick={() => navigate("/settings")}
+            onClick={() => navigate("/dashboard")}
             className="mt-1 text-[12.5px] text-ink-muted underline hover:text-ink"
           >
-            Back to Settings
+            Back to Dashboard
           </button>
         )}
       </div>
